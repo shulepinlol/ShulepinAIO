@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="champions">
+      <UniqueIdentifier>{01f8db46-56bb-4b39-a87c-c1266131a1a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{485fc1ca-9abe-404e-85b8-2bb364ead1f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="main">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="varus.cpp">
+      <Filter>champions</Filter>
+    </ClCompile>
+    <ClCompile Include="template.cpp">
+      <Filter>champions</Filter>
+    </ClCompile>
+    <ClCompile Include="lucian.cpp">
+      <Filter>champions</Filter>
+    </ClCompile>
+    <ClCompile Include="lee_sin.cpp">
+      <Filter>champions</Filter>
+    </ClCompile>
+    <ClCompile Include="irelia.cpp">
+      <Filter>champions</Filter>
+    </ClCompile>
+    <ClCompile Include="hwei.cpp">
+      <Filter>champions</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="spell.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="issue_order_manager.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="debug.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="arena_helper.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="varus.h">
+      <Filter>champions</Filter>
+    </ClInclude>
+    <ClInclude Include="template.h">
+      <Filter>champions</Filter>
+    </ClInclude>
+    <ClInclude Include="lucian.h">
+      <Filter>champions</Filter>
+    </ClInclude>
+    <ClInclude Include="lee_sin.h">
+      <Filter>champions</Filter>
+    </ClInclude>
+    <ClInclude Include="irelia.h">
+      <Filter>champions</Filter>
+    </ClInclude>
+    <ClInclude Include="hwei.h">
+      <Filter>champions</Filter>
+    </ClInclude>
+    <ClInclude Include="arena_helper.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="issue_order_manager.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="spell.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
