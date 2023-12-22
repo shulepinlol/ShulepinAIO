@@ -5,7 +5,7 @@
 #include "sdk.hpp"
 
 #include "arena_helper.h"
-#include "debug.h"
+#include "dev_tool.h"
 
 #include "irelia.h"
 #include "lucian.h"
@@ -20,9 +20,6 @@ using champion_functions = std::pair<std::optional<std::function<void()>>, std::
 std::unordered_map<std::string, champion_functions> champion_actions = {
     {"Lucian", {{[]() { lucian::load(); }}, {[]() { lucian::unload(); }}}},
     {"Varus", {{[]() { varus::load(); }}, {[]() { varus::unload(); }}}},
-    //{"LeeSin", {{[]() { lee_sin::load(); }}, {[]() { lee_sin::unload(); }}}},
-    //{"Irelia", {{[]() { irelia::load(); }}, {[]() { irelia::unload(); }}}},
-    //{"Hwei", {{[]() { hwei::load(); }}, {[]() { hwei::unload(); }}}},
 };
 
 extern "C" __declspec(dllexport) bool PluginLoad(core_sdk* sdk, void** custom_sdk)
@@ -69,7 +66,7 @@ extern "C" __declspec(dllexport) bool PluginLoad(core_sdk* sdk, void** custom_sd
 
     if (g_sdk->get_username() == std::string("shxlxpxn"))
     {
-        s_debug::load();
+        dev_tool::load();
     }
     
     return true;
@@ -87,7 +84,7 @@ extern "C" __declspec(dllexport) void PluginUnload()
 
     if (g_sdk->get_username() == std::string("shxlxpxn"))
     {
-        s_debug::unload();
+        dev_tool::unload();
     }
     
     arena_helper::unload();

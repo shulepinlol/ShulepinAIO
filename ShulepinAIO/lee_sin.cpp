@@ -326,7 +326,7 @@ namespace lee_sin
     			return;
     		}
 
-    		const auto target = utils::get_target_with_list(1250.f, config::combo::q::ignore::list);
+    		const auto target = utils::get_target_with_list(config::combo::q::prediction::max_range, config::combo::q::ignore::list);
     		const auto& stacks = get_stacks();
 
     		if (!target)
@@ -352,7 +352,7 @@ namespace lee_sin
 					return;
 				}
     			
-    			const auto pred = q->get_prediction(target, config::combo::q::prediction::hitchance, config::combo::q::prediction::max_range);
+    			const auto pred = q->get_prediction(target, config::combo::q::prediction::hitchance);
     			if (pred.is_valid)
     			{
     				q->cast_spell(pred.cast_position);
@@ -488,7 +488,7 @@ namespace lee_sin
 				return;
 			}
     		
-    		const auto insec_target = utils::get_target(1500.f);
+    		const auto insec_target = utils::get_target(config::combo::q::prediction::max_range);
 
     		if (!insec_target)
     		{
@@ -508,7 +508,7 @@ namespace lee_sin
     			}
     			else
     			{
-    				const auto pred = q->get_prediction(insec_target, config::combo::q::prediction::hitchance, config::combo::q::prediction::max_range);
+    				const auto pred = q->get_prediction(insec_target, config::combo::q::prediction::hitchance);
     				if (pred.is_valid)
     				{
     					q->cast_spell(pred.cast_position);
@@ -557,7 +557,6 @@ namespace lee_sin
 
             // R
     		if (r->is_ready() &&
-    			r->is_in_range(insec_target) &&
     			w->is_issue_order_passed(0.15f) &&
     			should_cast_r)
     		{

@@ -1,5 +1,7 @@
 #include "sdk.hpp"
 #include "varus.h"
+
+#include "hashes.h"
 #include "utils.h"
 #include "spell.h"
 
@@ -333,18 +335,12 @@ namespace varus
 		q_collision = new script::spell(0, 1595.f);
 
 		// Set Q data
-		q->set_charged(true);
-		q->set_min_range(825.f);
-		q->set_max_range(1595.f);
-		q->add_charged_buff_mapping("Varus", -1173990314);
 		q->set_skillshot(pred_sdk::spell_type::linear, pred_sdk::targetting_type::edge_to_edge, 0.f, 70.f, 1900.f, { pred_sdk::collision_type::yasuo_wall });
+		q->set_charged_spell(825.f, 1595.f, 1.5f, BUFF_HASH("VarusQ"));
 
-		q_collision->set_charged(true);
-		q_collision->set_min_range(825.f);
-		q_collision->set_max_range(1595.f);
-		q_collision->add_charged_buff_mapping("Varus", -1173990314);
 		q_collision->set_skillshot(pred_sdk::spell_type::linear, pred_sdk::targetting_type::edge_to_edge, 0.f, 70.f, 1900.f, { pred_sdk::collision_type::hero, pred_sdk::collision_type::unit });
-		
+		q_collision->set_charged_spell(825.f, 1595.f, 1.5f, BUFF_HASH("VarusQ"));
+
 		// Set E data
 		e->set_skillshot(pred_sdk::spell_type::circular, pred_sdk::targetting_type::center, 0.2419f, 300.f, FLT_MAX, {});
 
@@ -1123,7 +1119,7 @@ namespace varus
 				return;
 			}
 
-			auto target = utils::get_target_with_list(q->get_range(), config::combo::q::ignore::list);
+			auto target = utils::get_target_with_list(config::combo::q::prediction::max_range, config::combo::q::ignore::list);
 
 			if (should_force_q)
 			{
@@ -1156,7 +1152,7 @@ namespace varus
 
 				q->set_min_range(825.f - config::combo::q::prediction::extra_charge_range);
 
-				const auto& pred_out = q->get_prediction(target, hitchance, config::combo::q::prediction::max_range);
+				const auto& pred_out = q->get_prediction(target, hitchance);
 				if (pred_out.is_valid)
 				{
 					if (q->release(pred_out.cast_position, true, 0.1f))
@@ -1193,7 +1189,7 @@ namespace varus
 				return;
 			}
 
-			const auto target = utils::get_target_with_list(q->get_range(), config::harass::q::ignore::list);
+			const auto target = utils::get_target_with_list(config::harass::q::prediction::max_range, config::harass::q::ignore::list);
 
 			if (!target)
 			{
@@ -1217,7 +1213,7 @@ namespace varus
 
 				q->set_min_range(825.f - config::harass::q::prediction::extra_charge_range);
 
-				const auto& pred_out = q->get_prediction(target, hitchance, config::harass::q::prediction::max_range);
+				const auto& pred_out = q->get_prediction(target, hitchance);
 				if (pred_out.is_valid)
 				{
 					if (q->release(pred_out.cast_position, true, 0.1f))
@@ -1286,7 +1282,11 @@ namespace varus
 
 			if (e_combo_global_check)
 			{
-				e->cast_spell_on_hitchance(target, hitchance, e->get_range());
+				const auto pred = e->get_prediction(target, hitchance);
+				if (pred.is_valid)
+				{
+					e->cast_spell(pred.cast_position);
+				}
 			}
 		}
 	
@@ -1313,7 +1313,11 @@ namespace varus
 
 			if (e_harass_global_check)
 			{
-				e->cast_spell_on_hitchance(target, hitchance, e->get_range());
+				const auto pred = e->get_prediction(target, hitchance);
+				if (pred.is_valid)
+				{
+					e->cast_spell(pred.cast_position);
+				}
 			}
 		}
 	}
@@ -1339,14 +1343,18 @@ namespace varus
 				{
 					return utils::is_valid_target(hero, config::combo::r::prediction::max_range) &&
 						!config::combo::r::ignore::list[hero->get_char_name()] &&
-							utils::is_on_cc(hero, r->get_travel_time(hero)) &&
+							utils::is_on_cc(hero, r->get_spell_hit_time(hero->get_position(), hero)) &&
 								!utils::is_protected_by_spell_shield(hero) &&
 									!utils::is_immune_to_cc(hero);
 				});
 
 				if (target)
 				{
-					r->cast_spell_on_hitchance(target, config::combo::r::prediction::hitchance, config::combo::r::prediction::max_range);
+					const auto pred = r->get_prediction(target, config::combo::r::prediction::hitchance);
+					if (pred.is_valid)
+					{
+						r->cast_spell(pred.cast_position);
+					}
 				}
 			}
 
@@ -1377,7 +1385,11 @@ namespace varus
 						return;
 					}
 					
-					r->cast_spell_on_hitchance(target, config::combo::r::prediction::hitchance, config::combo::r::prediction::max_range);
+					const auto pred = r->get_prediction(target, config::combo::r::prediction::hitchance);
+					if (pred.is_valid)
+					{
+						r->cast_spell(pred.cast_position);
+					}
 				}
 			}
 		}
@@ -1394,7 +1406,7 @@ namespace varus
 
 		const auto& player = g_sdk->object_manager->get_local_player();
 		
-		const auto collision_count = q_collision->get_collision_count(target, 0, q_collision->get_max_range());
+		const auto collision_count = 0;// TODO q_collision->get_collision_count(target, 0, q_collision->get_max_range());
 		
 		const bool is_w_active_ready = w->is_ready() && w->get_toggle_state() == 0;
 		const bool is_w_active_casted = w->get_toggle_state() == 1;
@@ -1412,7 +1424,7 @@ namespace varus
 		const auto real_w_active_damage = is_w_active_casted ? calculate_w_active_damage(target, q->get_charged_time(2.f), get_real_stacks(target), real_q_damage + real_w_damage) : 0.f;
 		const auto real_total_damage = real_q_damage + real_w_active_damage;
 		const auto real_is_killable = 
-			real_total_damage > utils::get_real_health(target, "AD", config::auto_kill::health_pred, q->get_travel_time(target));
+			real_total_damage > utils::get_real_health(target, "AD", config::auto_kill::health_pred, q->get_spell_hit_time(target->get_server_position(), target));
 
 		const auto is_fully_charged = q->get_charged_time(is_w_active_casted ? 2.f : 1.5f) > 0.9f;
 
@@ -1457,7 +1469,7 @@ namespace varus
 
 			q->set_min_range(825.f - config::auto_kill::q::prediction::extra_charge_range);
 
-			const auto& pred_out = q->get_prediction(target, config::auto_kill::q::prediction::hitchance, config::auto_kill::q::prediction::max_range);
+			const auto& pred_out = q->get_prediction(target, config::auto_kill::q::prediction::hitchance);
 			if (pred_out.is_valid)
 			{
 				if (q->release(pred_out.cast_position, true, 0.1f))
@@ -1493,7 +1505,7 @@ namespace varus
 		const auto real_e_damage = calculate_e_damage(target);
 		const auto real_total_damage = real_e_damage + real_w_damage;
 		const auto real_is_killable = 
-			real_total_damage > utils::get_real_health(target, "AD", config::auto_kill::health_pred, e->get_travel_time(target));
+			real_total_damage > utils::get_real_health(target, "AD", config::auto_kill::health_pred, e->get_spell_hit_time(target->get_server_position(), target));
 
 		e_damage_cache[target->get_id()] = real_e_damage - real_w_damage;
 		stack_damage_cache[target->get_id()] = real_w_damage;
@@ -1515,7 +1527,11 @@ namespace varus
 		
 		if (real_is_killable)
 		{
-			e->cast_spell_on_hitchance(target, config::auto_kill::e::prediction::hitchance, config::auto_kill::e::prediction::max_range);
+			const auto pred = e->get_prediction(target, config::auto_kill::e::prediction::hitchance);
+			if (pred.is_valid)
+			{
+				e->cast_spell(pred.cast_position);
+			}
 		}
 	}
 
@@ -1550,7 +1566,7 @@ namespace varus
 			return;
 		}
 		
-		const auto target = utils::get_target_with_list(q->get_range(), config::semi_manual::q::ignore::list);
+		const auto target = utils::get_target_with_list(config::semi_manual::q::prediction::max_range, config::semi_manual::q::ignore::list);
 
 		if (!target)
 		{
@@ -1570,7 +1586,7 @@ namespace varus
 
 			q->set_min_range(825.f - config::semi_manual::q::prediction::extra_charge_range);
 
-			const auto& pred_out = q->get_prediction(target, hitchance, config::semi_manual::q::prediction::max_range);
+			const auto& pred_out = q->get_prediction(target, hitchance);
 			if (pred_out.is_valid)
 			{
 				if (q->release(pred_out.cast_position, true, 0.1f))
@@ -1606,7 +1622,11 @@ namespace varus
 			return;
 		}
 
-		r->cast_spell_on_hitchance(target, config::semi_manual::r::prediction::hitchance, config::semi_manual::r::prediction::max_range);
+		const auto pred = r->get_prediction(target, config::semi_manual::r::prediction::hitchance);
+		if (pred.is_valid)
+		{
+			r->cast_spell(pred.cast_position);
+		}
 	}
 	
 	void r_auto_dash_logic(game_object* target)
@@ -1639,9 +1659,9 @@ namespace varus
 		const auto end_path = target->get_path().back();
 		const auto dash_speed = target->get_dash_speed();
 		const auto dash_time = target->get_position().distance(end_path) / dash_speed;
-		const auto intersection_time = r->get_travel_time(end_path);
+		const auto intersection_time = r->get_spell_hit_time(end_path, target);
 		
-		const auto pred = r->get_prediction(target, 0.f, config::auto_dash::r::prediction::max_range);
+		const auto pred = r->get_prediction(target, 0.f);
 		if (pred.is_valid &&
 			dash_time < intersection_time &&
 			end_path.distance(player->get_position()) < max_range &&
@@ -1655,45 +1675,12 @@ namespace varus
 
 	void q_lane_clear_logic()
 	{
-		if (!q->is_ready())
-		{
-			return;
-		}
-
-		const auto pred = q->get_spell_farm(
-			3,
-			static_cast< spell_farm_flag >(spell_farm_flag::lasthit | spell_farm_flag::when_attack_not_ready),
-			dmg_sdk::damage_type::physical);
-
-		if (pred.is_valid)
-		{
-			if (q->is_charging())
-			{
-				q->release(pred.cast_position);
-			}
-			else
-			{
-				q->cast_spell();
-			}
-		}
+		//
 	}
 	
 	void e_lane_clear_logic()
 	{
-		if (!e->is_ready())
-		{
-			return;
-		}
-
-		const auto pred = e->get_spell_farm(
-			3,
-			static_cast< spell_farm_flag >(spell_farm_flag::none),
-			dmg_sdk::damage_type::physical);
-
-		if (pred.is_valid)
-		{
-			e->cast_spell(pred.cast_position);
-		}
+		//
 	}
 	
 	void draw_spell_ranges()

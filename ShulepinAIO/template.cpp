@@ -1,4 +1,6 @@
 ﻿#include "template.h"
+
+#include "hashes.h"
 #include "sdk.hpp"
 #include "spell.h"
 #include "utils.h"
@@ -36,16 +38,20 @@ namespace template_champion
 
     void register_spells()
     {
-        q = new script::spell(0, 0.f);
+        q = new script::spell(0, 1595.f);
         w = new script::spell(1, 0.f);
         e = new script::spell(2, 0.f);
         r = new script::spell(3, 0.f);
+
+        q->set_skillshot(pred_sdk::spell_type::linear, pred_sdk::targetting_type::edge_to_edge, 0.f, 70.f, FLT_MAX, {});
+        q->set_charged_spell(700.f, 1450.f, 1.5f, BUFF_HASH("XerathArcanopulseChargeUp"));
+    	q->set_proc_delay(0.5f);
     }
     
     void create_config()
     {
         const auto& player = g_sdk->object_manager->get_local_player();
-        const auto config = g_sdk->menu_manager->add_category("shulepin_aio_template_champion","ShulepinAIO - " + player->get_char_name());
+        const auto config = g_sdk->menu_manager->add_category("shulepin_aio_template_champion","ShulepinAIO - Template");
         {
             
         }
@@ -115,6 +121,7 @@ namespace template_champion
     {
         //
     }
+    
 
     void __fastcall present()
     {

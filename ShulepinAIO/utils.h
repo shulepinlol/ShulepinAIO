@@ -1,5 +1,6 @@
 #pragma once
 #include "sdk.hpp"
+#include "logging_utils.h"
 
 namespace utils
 {
@@ -24,5 +25,4 @@ namespace utils
 	extern bool is_position_inside_turret_range(const math::vector3 position, const float extra_range = 0.f);
 	extern game_object* get_target(const float range);
 	extern game_object* get_target_with_list(const float range, std::unordered_map<std::string, bool> list);
-	extern uint32_t interpolate_color(uint32_t color1, uint32_t color2, float t);
 }

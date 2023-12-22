@@ -159,11 +159,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="arena_helper.cpp" />
-    <ClCompile Include="debug.cpp" />
-    <ClCompile Include="hwei.cpp" />
-    <ClCompile Include="irelia.cpp" />
+    <ClCompile Include="dev_tool.cpp" />
     <ClCompile Include="issue_order_manager.cpp" />
-    <ClCompile Include="lee_sin.cpp" />
     <ClCompile Include="lucian.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="spell.cpp" />
@@ -173,11 +170,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arena_helper.h" />
-    <ClInclude Include="debug.h" />
-    <ClInclude Include="hwei.h" />
-    <ClInclude Include="irelia.h" />
+    <ClInclude Include="dev_tool.h" />
+    <ClInclude Include="hashes.h" />
     <ClInclude Include="issue_order_manager.h" />
-    <ClInclude Include="lee_sin.h" />
+    <ClInclude Include="logging_utils.h" />
     <ClInclude Include="lucian.h" />
     <ClInclude Include="spell.h" />
     <ClInclude Include="template.h" />

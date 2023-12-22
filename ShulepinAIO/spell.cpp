@@ -1,76 +1,156 @@
 #include "spell.h"
+
+#include <optional>
+
+#include "hashes.h"
 #include "utils.h"
 
 namespace script
 {
-	spell::spell(const int spell_slot, const float range): spell_type_(), spell_targetting_type_(), spell_delay_(0),
-	                                                       spell_radius_(0),
-	                                                       spell_speed_(0), min_range_(0), max_range_(0), is_charged_(false)
+	/* Constructor */
+
+	spell::spell(const int spell_slot, const float range)
 	{
 		spell_slot_ = spell_slot;
-		spell_range_ = range;
+		range_ = range;
 	}
 
-	void spell::set_skillshot(const pred_sdk::spell_type spell_type, const pred_sdk::targetting_type targetting_type,
-	                          const float delay, const float radius, const float speed,
-	                          const std::vector<pred_sdk::collision_type>& collision_data)
+	/* Settets */
+
+	spell* spell::set_skillshot(const pred_sdk::spell_type spell_type, const pred_sdk::targetting_type targetting_type, 
+		const float delay, const float radius, const float speed, const std::vector<pred_sdk::collision_type>& collision_data)
 	{
 		spell_type_ = spell_type;
-		spell_targetting_type_ = targetting_type;
-		spell_delay_ = delay;
-		spell_radius_ = radius;
-		spell_speed_ = speed;
-		spell_collision_data_ = collision_data;
+		targetting_type_ = targetting_type;
+		delay_ = delay;
+		radius_ = radius;
+		projectile_speed_ = speed;
+		forbidden_collisions_ = collision_data;
+
+		return this;
 	}
 
-	void spell::set_range(const float range)
+	spell* spell::set_charged_spell(const float min_range, const float max_range, const float duration, const uint32_t charge_buff)
 	{
-		spell_range_ = range;
-	}
-
-	void spell::set_spell_type(const pred_sdk::spell_type spell_type)
-	{
-		spell_type_ = spell_type;
-	}
-
-	void spell::set_targetting_type(const pred_sdk::targetting_type spell_targetting_type)
-	{
-		spell_targetting_type_ = spell_targetting_type;
-	}
-
-	void spell::set_delay(const float delay)
-	{
-		spell_delay_ = delay;
-	}
-
-	void spell::set_radius(const float radius)
-	{
-		spell_radius_ = radius;
-	}
-
-	void spell::set_speed(const float speed)
-	{
-		spell_speed_ = speed;
-	}
-
-	void spell::set_collision(const std::vector<pred_sdk::collision_type>& spell_collision_data)
-	{
-		spell_collision_data_ = spell_collision_data;
-	}
-
-	void spell::set_min_range(const float min_range)
-	{
+		charged_spell_ = true;
 		min_range_ = min_range;
+		max_range_ = max_range;
+		duration_ = duration;
+		charge_buff_ = charge_buff;
+
+		return this;
 	}
 
-	void spell::set_max_range(const float max_range)
+	void spell::set_spell_slot(const int value)
 	{
-		max_range_ = max_range;
+		spell_slot_ = value;
+	}
+
+	void spell::set_range(const float value)
+	{
+		range_ = value;
+	}
+
+	void spell::set_min_range(const float value)
+	{
+		min_range_ = value;
+	}
+
+	void spell::set_max_range(const float value)
+	{
+		max_range_ = value;
 	}
 
 	void spell::set_charged(const bool value)
 	{
-		is_charged_ = value;
+		charged_spell_ = value;
+	}
+
+	void spell::set_radius(const float value)
+	{
+		radius_ = value;
+	}
+
+	void spell::set_cast_range(const float value)
+	{
+		cast_range_ = value;
+	}
+
+	void spell::set_delay(const float value)
+	{
+		delay_ = value;
+	}
+
+	void spell::set_proc_delay(const float value)
+	{
+		proc_delay_ = value;
+	}
+
+	void spell::set_projectile_speed(const float value)
+	{
+		projectile_speed_ = value;
+	}
+
+	void spell::set_extension_override(const float value)
+	{
+		extension_override_ = value;
+	}
+
+	void spell::set_bypass_anti_buffering(const bool value)
+	{
+		bypass_anti_buffering_ = value;
+	}
+
+	void spell::set_spell_type(const pred_sdk::spell_type value)
+	{
+		spell_type_ = value;
+	}
+
+	void spell::set_targeting_type(const pred_sdk::targetting_type value)
+	{
+		targetting_type_ = value;
+	}
+
+	void spell::set_hitchance(const int value)
+	{
+		expected_hitchance_ = value;
+	}
+
+	void spell::set_source(game_object* value)
+	{
+		source_ = value;
+	}
+
+	void spell::set_source_position(const math::vector3 value)
+	{
+		source_position_ = value;
+	}
+
+	void spell::set_collision(const std::vector<pred_sdk::collision_type>& value)
+	{
+		forbidden_collisions_ = value;
+	}
+
+	void spell::set_expected_hit_types(const std::vector<pred_sdk::hit_type>& value)
+	{
+		expected_hit_types_ = value;
+	}
+
+	void spell::set_additional_target_selection_checks(const std::function<bool(game_object*)>& value)
+	{
+		additional_target_selection_checks_ = value;
+	}
+
+	/* Getters */
+
+	int spell::get_spell_slot() const
+	{
+		return spell_slot_;
+	}
+
+	float spell::get_range() const
+	{
+		return range_;
 	}
 
 	float spell::get_min_range() const
@@ -83,38 +163,44 @@ namespace script
 		return max_range_;
 	}
 
-	void spell::add_charged_buff_mapping(const std::string& champion_name, uint32_t buff_hash)
+	bool spell::get_charged() const
 	{
-		charged_buff_map_[champion_name] = buff_hash;
+		return charged_spell_;
 	}
 
-	int spell::get_level() const
+	float spell::get_radius() const
 	{
-		return g_sdk->object_manager->get_local_player()->get_spell(spell_slot_)->get_level();
+		return radius_;
 	}
 
-	float spell::get_charged_time(const float duration) const
+	float spell::get_cast_range() const
 	{
-		const auto& player = g_sdk->object_manager->get_local_player();
-		const auto it = charged_buff_map_.find(player->get_char_name());
-
-		if (it != charged_buff_map_.end())
-		{
-			const auto buff = player->get_buff_by_hash(it->second);
-			const auto time = g_sdk->clock_facade->get_game_time();
-
-			if (buff)
-			{
-				return fmaxf(0.f, fminf(1.f, (time - buff->get_start_time() + (g_sdk->net_client->get_ping() / 1000) * 0.033f) / duration));
-			}
-		}
-
-		return 0.f;
+		return cast_range_;
 	}
 
-	float spell::get_charged_range(const float max_range) const
+	float spell::get_delay() const
 	{
-		return min_range_ + fminf((max_range - min_range_), (max_range - min_range_) * get_charged_time());
+		return delay_;
+	}
+
+	float spell::get_proc_delay() const
+	{
+		return proc_delay_;
+	}
+
+	float spell::get_projectile_speed() const
+	{
+		return projectile_speed_;
+	}
+
+	float spell::get_extension_override() const
+	{
+		return extension_override_;
+	}
+
+	bool spell::get_bypass_anti_buffering() const
+	{
+		return bypass_anti_buffering_;
 	}
 
 	pred_sdk::spell_type spell::get_spell_type() const
@@ -122,215 +208,244 @@ namespace script
 		return spell_type_;
 	}
 
-	pred_sdk::targetting_type spell::get_targetting_type() const
+	pred_sdk::targetting_type spell::get_targeting_type() const
 	{
-		return spell_targetting_type_;
+		return targetting_type_;
 	}
 
-	float spell::get_range() const
+	int spell::get_hitchance() const
 	{
-		return spell_range_;
+		return expected_hitchance_;
 	}
 
-	float spell::get_delay() const
+	game_object* spell::get_source() const
 	{
-		return spell_delay_;
+		return source_;
 	}
 
-	float spell::get_radius() const
+	math::vector3 spell::get_source_position() const
 	{
-		return spell_radius_;
-	}
-
-	float spell::get_speed() const
-	{
-		return spell_speed_;
+		return source_position_;
 	}
 
 	std::vector<pred_sdk::collision_type> spell::get_collision() const
 	{
-		return spell_collision_data_;
+		return forbidden_collisions_;
 	}
 
-	bool spell::get_charged() const
+	std::vector<pred_sdk::hit_type> spell::get_expected_hit_types() const
 	{
-		return is_charged_;
+		return expected_hit_types_;
 	}
 
+	std::function<bool(game_object*)> spell::get_additional_target_selection_checks() const
+	{
+		return additional_target_selection_checks_;
+	}
+
+	spell_entry* spell::get_spell() const
+	{
+		const auto& player = g_sdk->object_manager->get_local_player();
+		return player->get_spell(spell_slot_);
+	}
+
+	uint8_t spell::get_type() const
+	{
+		return this->get_spell()->get_type();
+	}
+
+	float spell::get_cast_range_from_core() const
+	{
+		return this->get_spell()->get_cast_range();
+	}
+
+	uint32_t spell::get_charges() const
+	{
+		return this->get_spell()->get_charges();
+	}
+
+	int spell::get_level() const
+	{
+		return this->get_spell()->get_level();
+	}
 
 	float spell::get_cooldown() const
 	{
-		return g_sdk->object_manager->get_local_player()->get_spell(spell_slot_)->get_cooldown();
+		return this->get_spell()->get_cooldown();
 	}
 
 	uint8_t spell::get_toggle_state() const
 	{
-		return g_sdk->object_manager->get_local_player()->get_spell(spell_slot_)->get_toggle_state();
+		return this->get_spell()->get_toggle_state();
 	}
 
-	bool spell::is_charging()
+	void* spell::get_icon() const
 	{
-		return get_charged_time() > 0.f;
+		return this->get_spell()->get_data()->get_icon();
 	}
+
+	spell_static_data* spell::get_static_data() const
+	{
+		return this->get_spell()->get_data()->get_static_data();
+	}
+
+	pred_sdk::spell_data spell::get_prediction_input(const int hitchance, const std::optional<pred_input_options>& options) const
+	{
+		pred_sdk::spell_data pred_input{};
+
+		pred_input.spell_type = spell_type_;
+		pred_input.targetting_type = targetting_type_;
+		pred_input.expected_hitchance = hitchance;
+
+		pred_input.spell_slot = spell_slot_;
+		pred_input.range = range_;
+		pred_input.radius = radius_;
+		pred_input.delay = delay_;
+		pred_input.proc_delay = proc_delay_;
+		pred_input.projectile_speed = projectile_speed_;
+
+		pred_input.forbidden_collisions = forbidden_collisions_;
+
+		if (options)
+		{
+			if (options->source.has_value())
+			{
+				pred_input.source = options->source.value();
+			}
+			if (options->source_position.has_value())
+			{
+				pred_input.source_position = options->source_position.value();
+			}
+			if (options->bypass_anti_buffering.has_value())
+			{
+				pred_input.bypass_anti_buffering = options->bypass_anti_buffering.value();
+			}
+			if (options->cast_range.has_value())
+			{
+				pred_input.cast_range = options->cast_range.value();
+			}
+			if (options->proc_delay.has_value())
+			{
+				pred_input.proc_delay = options->proc_delay.value();
+			}
+			if (options->extension_override.has_value())
+			{
+				pred_input.extension_override = options->extension_override.value();
+			}
+			if (options->expected_hit_types.has_value())
+			{
+				pred_input.expected_hit_types = options->expected_hit_types.value();
+			}
+			if (options->additional_target_selection_checks.has_value())
+			{
+				pred_input.additional_target_selection_checks = options->additional_target_selection_checks.value();
+			}
+		}
+
+		return pred_input;
+	}
+
+	pred_sdk::pred_data spell::get_prediction(const pred_sdk::spell_data& pred_input) const
+	{
+		return sdk::prediction->predict(pred_input);
+	}
+
+	pred_sdk::pred_data spell::get_prediction(game_object* target, const pred_sdk::spell_data& pred_input) const
+	{
+		return sdk::prediction->predict(target, pred_input);
+	}
+
+	pred_sdk::pred_data spell::get_prediction(const int hitchance, const std::optional<pred_input_options>& options) const
+	{
+		return sdk::prediction->predict(this->get_prediction_input(hitchance, options));
+	}
+
+	pred_sdk::pred_data spell::get_prediction(game_object* target, const int hitchance, const std::optional<pred_input_options>& options) const
+	{
+		return sdk::prediction->predict(target, this->get_prediction_input(hitchance, options));
+	}
+
+	float spell::get_charged_time(const float duration) const
+	{
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto buff = player->get_buff_by_hash(charge_buff_);
+		const auto time = g_sdk->clock_facade->get_game_time();
+
+		if (buff)
+		{
+			return fmaxf(0.f, fminf(1.f, (time - buff->get_start_time() + 0.033f) / duration));
+		}
+
+		return 0.f;
+	}
+
+	float spell::get_charged_range(const float duration) const
+	{
+		return min_range_ + fminf((max_range_ - min_range_), (max_range_ - min_range_) * this->get_charged_time(duration));
+	}
+
+	float spell::get_spell_hit_time(const math::vector3 pos, game_object* target, const std::optional<pred_input_options>& options) const
+	{
+		auto pred_input = this->get_prediction_input(0, options);
+		return sdk::prediction->util()->get_spell_hit_time(pred_input, pos, target);
+	}
+
+
+	/* Spell state methods */
 
 	bool spell::is_ready(const float extra_time) const
 	{
-		const auto player = g_sdk->object_manager->get_local_player();
-		const auto spell_state = player->get_spell_cast_state(spell_slot_);
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& spell_state = player->get_spell_cast_state(spell_slot_);
 
 		if (spell_state == 0)
 		{
 			return true;
 		}
 
-		const auto cooldown = player->get_spell(spell_slot_)->get_cooldown();
+		const auto cooldown = this->get_cooldown();
 		return cooldown < extra_time && (spell_state & (1 << 5)) != 0;
-	}
-
-	bool spell::is_enough_mana_pct(const float value)
-	{
-		return utils::is_enough_mana(value);
 	}
 
 	bool spell::is_issue_order_passed(const float value) const
 	{
-		return spell_last_cast_t_ + value < g_sdk->clock_facade->get_game_time();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+		return spell_last_cast_t_ + value < time;
 	}
 
-	bool spell::is_in_range(game_object* target) const
+	bool spell::is_enough_mana_pct(const float value) const
 	{
-		return g_sdk->object_manager->get_local_player()->get_server_position().distance(target->get_position()) < spell_range_;
+		return utils::is_enough_mana(value);
 	}
-	
-	pred_sdk::pred_data spell::get_prediction(game_object* target) const
+
+	bool spell::is_charging() const
 	{
-		pred_sdk::spell_data pred_input{};
-
-		pred_input.spell_type = spell_type_;
-		pred_input.targetting_type = spell_targetting_type_;
-		pred_input.expected_hitchance = 0;
-		pred_input.spell_slot = spell_slot_;
-		pred_input.range = is_charged_ ? get_charged_range(spell_range_) : spell_range_;
-		pred_input.radius = spell_radius_;
-		pred_input.delay = spell_delay_;
-		pred_input.projectile_speed = spell_speed_;
-		pred_input.forbidden_collisions = spell_collision_data_;
-
-		auto pred_output = sdk::prediction->predict(target, pred_input);
-		return pred_output;
-	}
-	
-	pred_sdk::pred_data spell::get_prediction(game_object* target, const int hitchance, const float range) const
-	{
-		pred_sdk::spell_data pred_input{};
-
-		pred_input.spell_type = spell_type_;
-		pred_input.targetting_type = spell_targetting_type_;
-		pred_input.expected_hitchance = hitchance;
-		pred_input.spell_slot = spell_slot_;
-		pred_input.range = is_charged_ ? get_charged_range(range) : range;
-		pred_input.radius = spell_radius_;
-		pred_input.delay = spell_delay_;
-		pred_input.projectile_speed = spell_speed_;
-		pred_input.forbidden_collisions = spell_collision_data_;
-
-		auto pred_output = sdk::prediction->predict(target, pred_input);
-		return pred_output;
+		return get_charged_time() > 0.f;
 	}
 
-	pred_sdk::pred_data spell::get_prediction(game_object* target, const int hitchance, const float range, const std::vector<pred_sdk::hit_type>& hit_type) const
-	{
-		pred_sdk::spell_data pred_input{};
-
-		pred_input.spell_type = spell_type_;
-		pred_input.targetting_type = spell_targetting_type_;
-		pred_input.expected_hitchance = hitchance;
-		pred_input.spell_slot = spell_slot_;
-		pred_input.range = is_charged_ ? get_charged_range(range) : range;
-		pred_input.radius = spell_radius_;
-		pred_input.delay = spell_delay_;
-		pred_input.projectile_speed = spell_speed_;
-		pred_input.forbidden_collisions = spell_collision_data_;
-		pred_input.expected_hit_types = hit_type;
-		
-		auto pred_output = sdk::prediction->predict(target, pred_input);
-		return pred_output;
-	}
-
-	pred_sdk::pred_data spell::get_prediction(game_object* target, const pred_sdk::spell_data& pred_input) const
-	{
-		auto pred_output = sdk::prediction->predict(target, pred_input);
-		return pred_output;
-	}
-
-	pred_sdk::pred_data spell::get_spell_farm(const int aoe_hits, const spell_farm_flag flags, const dmg_sdk::damage_type damage_type) const
-	{
-		pred_sdk::spell_data pred_input{};
-
-		pred_input.spell_type = spell_type_;
-		pred_input.targetting_type = spell_targetting_type_;
-		pred_input.spell_slot = spell_slot_;
-		pred_input.range = is_charged_ ? get_charged_range(spell_range_) : spell_range_;
-		pred_input.radius = spell_radius_;
-		pred_input.delay = spell_delay_;
-		pred_input.projectile_speed = spell_speed_;
-		pred_input.forbidden_collisions = spell_collision_data_;
-
-		const auto pred_output = sdk::orbwalker->spell_farm(pred_input, aoe_hits, flags, damage_type);
-		return pred_output;
-	}
-
-	int spell::get_collision_count(game_object* target, const int hitchance, const float range) const
-	{
-		pred_sdk::spell_data pred_input{};
-
-		pred_input.spell_type = spell_type_;
-		pred_input.targetting_type = spell_targetting_type_;
-		pred_input.spell_slot = spell_slot_;
-		pred_input.range = is_charged_ ? get_charged_range(range) : range;
-		pred_input.radius = spell_radius_;
-		pred_input.delay = spell_delay_;
-		pred_input.projectile_speed = spell_speed_;
-		pred_input.forbidden_collisions = spell_collision_data_;
-
-		const auto pred_output = sdk::prediction->predict(target, pred_input);
-		const auto collision_data = sdk::prediction->collides(pred_output.cast_position, pred_input, target);
-		return static_cast<int>(collision_data.collided_units.size());
-	}
-	
-	uint32_t spell::get_stacks() const
-	{
-		return g_sdk->object_manager->get_local_player()->get_spell(spell_slot_)->get_charges();
-	}
-
-	float spell::get_travel_time(game_object* target) const
-	{
-		return spell_delay_ + (g_sdk->object_manager->get_local_player()->get_position().distance(target->get_position()) / spell_speed_);
-	}
-
-	float spell::get_travel_time(const math::vector3 position) const
-	{
-		return spell_delay_ + (g_sdk->object_manager->get_local_player()->get_position().distance(position) / spell_speed_);
-	}
+	/* Spell casting methods */
 
 	bool spell::release(const math::vector3 cast_position, const bool release_cast, const float t)
 	{
-		const auto player = g_sdk->object_manager->get_local_player();
-		const auto time = g_sdk->clock_facade->get_game_time();
-		if (spell_last_cast_t_ + t < time)
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+
+		if (spell_last_cast_t_ + t < time && cast_position.distance(player->get_server_position()) < this->get_charged_range(duration_))
 		{
 			player->update_chargeable_spell(spell_slot_, cast_position, release_cast);
 			spell_last_cast_t_ = time;
 			g_sdk->log_console("[+] spell order %d was issued at %f", spell_slot_, spell_last_cast_t_);
 			return true;
 		}
+
 		return false;
 	}
 
 	bool spell::cast_spell(const float t)
 	{
-		const auto player = g_sdk->object_manager->get_local_player();
-		const auto time = g_sdk->clock_facade->get_game_time();
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+
 		if (spell_last_cast_t_ + t < time)
 		{
 			player->cast_spell(spell_slot_);
@@ -338,13 +453,15 @@ namespace script
 			g_sdk->log_console("[+] spell order %d was issued at %f", spell_slot_, spell_last_cast_t_);
 			return true;
 		}
+
 		return false;
 	}
 
 	bool spell::cast_spell(const math::vector3 cast_position, const float t)
 	{
-		const auto player = g_sdk->object_manager->get_local_player();
-		const auto time = g_sdk->clock_facade->get_game_time();
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+
 		if (spell_last_cast_t_ + t < time)
 		{
 			player->cast_spell(spell_slot_, cast_position);
@@ -352,13 +469,15 @@ namespace script
 			g_sdk->log_console("[+] spell order %d was issued at %f", spell_slot_, spell_last_cast_t_);
 			return true;
 		}
+
 		return false;
 	}
 
 	bool spell::cast_spell(game_object* target, const float t)
 	{
-		const auto player = g_sdk->object_manager->get_local_player();
-		const auto time = g_sdk->clock_facade->get_game_time();
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+
 		if (spell_last_cast_t_ + t < time)
 		{
 			player->cast_spell(spell_slot_, target);
@@ -366,13 +485,15 @@ namespace script
 			g_sdk->log_console("[+] spell order %d was issued at %f", spell_slot_, spell_last_cast_t_);
 			return true;
 		}
+
 		return false;
 	}
 
 	bool spell::cast_spell(const math::vector3 start_position, const math::vector3 end_position, const float t)
 	{
-		const auto player = g_sdk->object_manager->get_local_player();
-		const auto time = g_sdk->clock_facade->get_game_time();
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+
 		if (spell_last_cast_t_ + t < time)
 		{
 			player->cast_spell(spell_slot_, start_position, end_position);
@@ -380,30 +501,7 @@ namespace script
 			g_sdk->log_console("[+] spell order %d was issued at %f", spell_slot_, spell_last_cast_t_);
 			return true;
 		}
-		return false;
-	}
 
-	bool spell::cast_spell_on_hitchance(game_object* target, const int hitchance, const float range, const float t)
-	{
-		const auto pred_output = this->get_prediction(target, hitchance, range);
-		if (pred_output.is_valid)
-		{
-			return this->cast_spell(pred_output.cast_position);
-		}
-		return false;
-	}
-
-	bool spell::cast_mood(const float t)
-	{
-		const auto player = g_sdk->object_manager->get_local_player();
-		const auto time = g_sdk->clock_facade->get_game_time();
-		if (spell_last_cast_t_ + t < time)
-		{
-			player->cast_hwei_mood(spell_slot_);
-			spell_last_cast_t_ = time;
-			g_sdk->log_console("[+] spell order %d was issued at %f", spell_slot_, spell_last_cast_t_);
-			return true;
-		}
 		return false;
 	}
 }

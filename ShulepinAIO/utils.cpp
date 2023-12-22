@@ -2,12 +2,14 @@
 #include "utils.h"
 #include <cstdint>
 
+#include "hashes.h"
+
 namespace utils
 {
 	// Spell shields
-	constexpr uint32_t recall_buff = 1518452144;
-	constexpr uint32_t edge_of_night_buff = -1336513801;
-	constexpr uint32_t banshees_veil_buff = -718742588;
+	constexpr uint32_t recall_buff = BUFF_HASH("recall");
+	constexpr uint32_t edge_of_night_buff = BUFF_HASH("itemmagekillerveil");
+	constexpr uint32_t banshees_veil_buff = BUFF_HASH("bansheesveil");
 	constexpr uint32_t sivir_e_buff = -1616589467;
 	constexpr uint32_t morgana_e_buff = -6564753;
 	constexpr uint32_t nocturne_w_buff = 1689565216;
@@ -257,22 +259,5 @@ namespace utils
 		{
 			return is_valid_target(hero, range) && !list[hero->get_char_name()];
 		});
-	}
-
-	uint32_t interpolate_color(uint32_t color1, uint32_t color2, float t)
-	{
-		uint8_t r1 = (color1 >> 16) & 0xFF;
-		uint8_t g1 = (color1 >> 8) & 0xFF;
-		uint8_t b1 = color1 & 0xFF;
-		
-		uint8_t r2 = (color2 >> 16) & 0xFF;
-		uint8_t g2 = (color2 >> 8) & 0xFF;
-		uint8_t b2 = color2 & 0xFF;
-		
-		uint8_t r = static_cast<uint8_t>(r1 + t * (r2 - r1));
-		uint8_t g = static_cast<uint8_t>(g1 + t * (g2 - g1));
-		uint8_t b = static_cast<uint8_t>(b1 + t * (b2 - b1));
-		
-		return (0xFF << 24) | (r << 16) | (g << 8) | b;
 	}
 }
