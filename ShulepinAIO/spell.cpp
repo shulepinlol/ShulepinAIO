@@ -340,6 +340,10 @@ namespace script
 			{
 				pred_input.additional_target_selection_checks = options->additional_target_selection_checks.value();
 			}
+			if (options->forbidden_collisions.has_value())
+			{
+				pred_input.forbidden_collisions = options->forbidden_collisions.value();
+			}
 		}
 
 		return pred_input;
@@ -413,6 +417,12 @@ namespace script
 		return spell_last_cast_t_ + value < time;
 	}
 
+	bool spell::is_mood_order_passed(const float value) const
+	{
+		const auto& time = g_sdk->clock_facade->get_game_time();
+		return spell_last_mood_cast_t_ + value < time;
+	}
+
 	bool spell::is_enough_mana_pct(const float value) const
 	{
 		return utils::is_enough_mana(value);
@@ -421,6 +431,18 @@ namespace script
 	bool spell::is_charging() const
 	{
 		return get_charged_time() > 0.f;
+	}
+
+	bool spell::is_in_range(const math::vector3 cast_position) const
+	{
+		const auto& player = g_sdk->object_manager->get_local_player();
+		return cast_position.distance(player->get_server_position()) < range_;
+	}
+
+
+	bool spell::can_cast(game_object* target) const
+	{
+		return sdk::orbwalker->can_spell(target, delay_);
 	}
 
 	/* Spell casting methods */
@@ -499,6 +521,35 @@ namespace script
 			player->cast_spell(spell_slot_, start_position, end_position);
 			spell_last_cast_t_ = time;
 			g_sdk->log_console("[+] spell order %d was issued at %f", spell_slot_, spell_last_cast_t_);
+			return true;
+		}
+
+		return false;
+	}
+
+	bool spell::cast_spell_on_hitchance(game_object* target, const int hitchance, const std::optional<pred_input_options>& options, const float t)
+	{
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+		const auto& pred = this->get_prediction(target, hitchance, options);
+
+		if (pred.is_valid)
+		{
+			return this->cast_spell(pred.cast_position, t);
+		}
+
+		return false;
+	}
+
+	bool spell::cast_mood(const float t)
+	{
+		const auto& player = g_sdk->object_manager->get_local_player();
+		const auto& time = g_sdk->clock_facade->get_game_time();
+
+		if (spell_last_mood_cast_t_ + t < time && player->cast_hwei_mood(spell_slot_))
+		{
+			spell_last_mood_cast_t_ = time;
+			g_sdk->log_console("[+] mood %d was issued at %f", spell_slot_, spell_last_cast_t_);
 			return true;
 		}
 

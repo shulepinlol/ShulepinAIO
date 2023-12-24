@@ -7,12 +7,13 @@
 
 namespace varus
 {
+	/* Spells */
 	script::spell* q;
-	script::spell* q_collision;
 	script::spell* w;
 	script::spell* e;
 	script::spell* r;
-	
+
+	/* Variables */
 	constexpr uint32_t w_debuff = -1823502239;
 	constexpr uint32_t r_debuff = 1155701612;
 	
@@ -31,14 +32,16 @@ namespace varus
 	std::unordered_map<uint32_t, float> q_full_damage_cache;
 	std::unordered_map<uint32_t, float> w_full_damage_cache;
 	std::unordered_map<uint32_t, float> stack_damage_cache;
-	
+
+	/* Events */
 	void __fastcall game_update();
 	void __fastcall present();
 	void __fastcall buff_gain(game_object* object, buff_instance* buff);
 	void __fastcall buff_loss(game_object* object, buff_instance* buff);
 	void __fastcall execute_cast(game_object* object, spell_cast* cast);
 	bool __fastcall before_attack(orb_sdk::event_data* data);
-	
+
+	/* Config */
 	namespace config::combo
 	{
 		bool use_q;
@@ -331,17 +334,13 @@ namespace varus
 		w = new script::spell(1, 0.f);
 		e = new script::spell(2, 925.f);
 		r = new script::spell(3, 1370.f);
-		
-		q_collision = new script::spell(0, 1595.f);
 
 		// Set Q data
 		q->set_skillshot(pred_sdk::spell_type::linear, pred_sdk::targetting_type::edge_to_edge, 0.f, 70.f, 1900.f, { pred_sdk::collision_type::yasuo_wall });
 		q->set_charged_spell(825.f, 1595.f, 1.5f, BUFF_HASH("VarusQ"));
 
-		q_collision->set_skillshot(pred_sdk::spell_type::linear, pred_sdk::targetting_type::edge_to_edge, 0.f, 70.f, 1900.f, { pred_sdk::collision_type::hero, pred_sdk::collision_type::unit });
-		q_collision->set_charged_spell(825.f, 1595.f, 1.5f, BUFF_HASH("VarusQ"));
-
 		// Set E data
+		e->set_proc_delay(0.5f);
 		e->set_skillshot(pred_sdk::spell_type::circular, pred_sdk::targetting_type::center, 0.2419f, 300.f, FLT_MAX, {});
 
 		// Set R data
@@ -948,18 +947,6 @@ namespace varus
 		remove_info_tab();
 	}
 
-	bool is_spell_locked()
-	{
-		auto result = false;
-
-		if (!e->is_issue_order_passed(e->get_delay() + utils::get_ping() + 0.066f))
-		{
-			result = true;
-		}
-
-		return result;
-	}
-
 	int get_real_stacks(game_object* target)
 	{
 		return hero_debuff_stacks[target->get_id()];
@@ -1105,7 +1092,7 @@ namespace varus
 
 		if (!q->is_ready() ||
 			sdk::orbwalker->would_cancel_attack() ||
-			is_spell_locked() ||
+
 			executing_kill_logic)
 		{
 			return;
@@ -1127,6 +1114,11 @@ namespace varus
 			}
 
 			if (!target)
+			{
+				return;
+			}
+
+			if (!q->can_cast(target))
 			{
 				return;
 			}
@@ -1248,7 +1240,6 @@ namespace varus
 
 		if (!e->is_ready() ||
 			sdk::orbwalker->would_cancel_attack() ||
-			is_spell_locked() ||
 			executing_kill_logic)
 		{
 			return;
@@ -1269,6 +1260,11 @@ namespace varus
 				return;
 			}
 
+			if (!e->can_cast(target))
+			{
+				return;
+			}
+
 			const auto priority = config::combo::priority == 0 ? 0 : 2;
 			const auto stack_check = get_real_stacks(target) >= config::combo::e::min_stacks || w->get_level() == 0;
 			const auto last_cast_check = q->is_issue_order_passed(1.f);
@@ -1282,11 +1278,7 @@ namespace varus
 
 			if (e_combo_global_check)
 			{
-				const auto pred = e->get_prediction(target, hitchance);
-				if (pred.is_valid)
-				{
-					e->cast_spell(pred.cast_position);
-				}
+				e->cast_spell_on_hitchance(target, hitchance);
 			}
 		}
 	
@@ -1313,11 +1305,7 @@ namespace varus
 
 			if (e_harass_global_check)
 			{
-				const auto pred = e->get_prediction(target, hitchance);
-				if (pred.is_valid)
-				{
-					e->cast_spell(pred.cast_position);
-				}
+				e->cast_spell_on_hitchance(target, hitchance);
 			}
 		}
 	}
@@ -1328,7 +1316,6 @@ namespace varus
 
 		if (!r->is_ready() ||
 			sdk::orbwalker->would_cancel_attack() ||
-			is_spell_locked() ||
 			executing_kill_logic ||
 			q->is_charging())
 		{
@@ -1342,7 +1329,8 @@ namespace varus
 				const auto target = sdk::target_selector->get_hero_target([](game_object* hero)
 				{
 					return utils::is_valid_target(hero, config::combo::r::prediction::max_range) &&
-						!config::combo::r::ignore::list[hero->get_char_name()] &&
+						r->can_cast(hero) &&
+						 !config::combo::r::ignore::list[hero->get_char_name()] &&
 							utils::is_on_cc(hero, r->get_spell_hit_time(hero->get_position(), hero)) &&
 								!utils::is_protected_by_spell_shield(hero) &&
 									!utils::is_immune_to_cc(hero);
@@ -1350,11 +1338,7 @@ namespace varus
 
 				if (target)
 				{
-					const auto pred = r->get_prediction(target, config::combo::r::prediction::hitchance);
-					if (pred.is_valid)
-					{
-						r->cast_spell(pred.cast_position);
-					}
+					r->cast_spell_on_hitchance(target, config::combo::r::prediction::hitchance);
 				}
 			}
 
@@ -1368,7 +1352,8 @@ namespace varus
 				const auto target = sdk::target_selector->get_hero_target([](game_object* hero)
 				{
 					return utils::is_valid_target(hero, config::combo::r::prediction::max_range) &&
-						!config::combo::r::ignore::list[hero->get_char_name()] &&
+						r->can_cast(hero) &&
+						 !config::combo::r::ignore::list[hero->get_char_name()] &&
 							(calculate_total_damage(hero) +
 								sdk::damage->get_aa_damage(g_sdk->object_manager->get_local_player(), hero, true) *
 								static_cast<float>(config::combo::r::cast_conditions::x_aa)) > utils::get_real_health(hero, "ALL") &&
@@ -1385,11 +1370,7 @@ namespace varus
 						return;
 					}
 					
-					const auto pred = r->get_prediction(target, config::combo::r::prediction::hitchance);
-					if (pred.is_valid)
-					{
-						r->cast_spell(pred.cast_position);
-					}
+					r->cast_spell_on_hitchance(target, config::combo::r::prediction::hitchance);
 				}
 			}
 		}
@@ -1406,7 +1387,10 @@ namespace varus
 
 		const auto& player = g_sdk->object_manager->get_local_player();
 		
-		const auto collision_count = 0;// TODO q_collision->get_collision_count(target, 0, q_collision->get_max_range());
+		const auto collided_units = q->get_prediction(target, 0, script::spell::pred_input_options{
+			.forbidden_collisions = { std::vector{ pred_sdk::collision_type::hero, pred_sdk::collision_type::unit } }
+		}).collided_units;
+		const auto collision_count = static_cast<int>(collided_units.size());
 		
 		const bool is_w_active_ready = w->is_ready() && w->get_toggle_state() == 0;
 		const bool is_w_active_casted = w->get_toggle_state() == 1;
@@ -1450,7 +1434,7 @@ namespace varus
 			w->cast_spell();
 		}
 
-		if (is_spell_locked())
+		if (!q->can_cast(target))
 		{
 			return;
 		}
@@ -1513,7 +1497,7 @@ namespace varus
 		if (!config::auto_kill::enabled ||
 			!config::auto_kill::use_e ||
 			q->is_charging() ||
-			is_spell_locked() ||
+			!e->can_cast(target) ||
 			config::auto_kill::e::ignore::list[target->get_char_name()] ||
 			!utils::is_enough_mana(config::auto_kill::e::mana_manager::value))
 		{
@@ -1527,11 +1511,7 @@ namespace varus
 		
 		if (real_is_killable)
 		{
-			const auto pred = e->get_prediction(target, config::auto_kill::e::prediction::hitchance);
-			if (pred.is_valid)
-			{
-				e->cast_spell(pred.cast_position);
-			}
+			e->cast_spell_on_hitchance(target, config::auto_kill::e::prediction::hitchance);
 		}
 	}
 
@@ -1560,7 +1540,6 @@ namespace varus
 			!config::semi_manual::q::value ||
 			!utils::is_enough_mana(config::semi_manual::q::mana_manager::value) ||
 			sdk::orbwalker->would_cancel_attack() ||
-			is_spell_locked() ||
 			executing_kill_logic)
 		{
 			return;
@@ -1569,6 +1548,11 @@ namespace varus
 		const auto target = utils::get_target_with_list(config::semi_manual::q::prediction::max_range, config::semi_manual::q::ignore::list);
 
 		if (!target)
+		{
+			return;
+		}
+
+		if (!q->can_cast(target))
 		{
 			return;
 		}
@@ -1603,13 +1587,10 @@ namespace varus
 
 	void r_semi_manual_logic()
 	{
-		const auto& player = g_sdk->object_manager->get_local_player();
-
 		if (!r->is_ready() ||
 			!config::semi_manual::r::value ||
 			!utils::is_enough_mana(config::semi_manual::r::mana_manager::value) ||
 			sdk::orbwalker->would_cancel_attack() ||
-			is_spell_locked() ||
 			executing_kill_logic)
 		{
 			return;
@@ -1622,11 +1603,12 @@ namespace varus
 			return;
 		}
 
-		const auto pred = r->get_prediction(target, config::semi_manual::r::prediction::hitchance);
-		if (pred.is_valid)
+		if (!r->can_cast(target))
 		{
-			r->cast_spell(pred.cast_position);
+			return;
 		}
+
+		r->cast_spell_on_hitchance(target, config::semi_manual::r::prediction::hitchance);
 	}
 	
 	void r_auto_dash_logic(game_object* target)
@@ -1778,6 +1760,13 @@ namespace varus
 		combat_logic();
 		semi_manual_logic();
 		//farm_logic();
+
+		const auto target = utils::get_target(q->get_max_range());
+
+		if (!target)
+		{
+			return;
+		}
 	}
 	
 	void __fastcall present()

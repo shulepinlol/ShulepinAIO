@@ -32,6 +32,7 @@ namespace script
         float duration_{};
         uint32_t charge_buff_{};
         float spell_last_cast_t_{};
+        float spell_last_mood_cast_t_{};
 
     public:
         /* Constructor */
@@ -128,14 +129,19 @@ namespace script
         /* Spell state methods */
         [[nodiscard]] bool is_ready(float extra_time = 0.f) const;
         [[nodiscard]] bool is_issue_order_passed(float value) const;
+        [[nodiscard]] bool is_mood_order_passed(float value) const;
         [[nodiscard]] bool is_enough_mana_pct(float value) const;
         [[nodiscard]] bool is_charging() const;
+        [[nodiscard]] bool is_in_range(math::vector3 cast_position) const;
+        [[nodiscard]] bool can_cast(game_object* target) const;
 
         /* Spell casting methods */
-        bool release(math::vector3 cast_position, bool release_cast = true, float t = 0.5f);
-        bool cast_spell(float t = 0.5f);
-        bool cast_spell(game_object* target, float t = 0.5f);
-        bool cast_spell(math::vector3 cast_position, float t = 0.5f);
-        bool cast_spell(math::vector3 start_position, math::vector3 end_position, float t = 0.5f);
+        bool release(math::vector3 cast_position, bool release_cast = true, float t = 0.15f);
+        bool cast_spell(float t = 0.15f);
+        bool cast_spell(game_object* target, float t = 0.15f);
+        bool cast_spell(math::vector3 cast_position, float t = 0.15f);
+        bool cast_spell(math::vector3 start_position, math::vector3 end_position, float t = 0.15f);
+        bool cast_spell_on_hitchance(game_object* target, int hitchance, const std::optional<pred_input_options>& options = std::nullopt, float t = 0.15f);
+        bool cast_mood(float t = 0.15f);
     };
 }

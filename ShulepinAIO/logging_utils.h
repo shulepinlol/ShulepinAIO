@@ -27,9 +27,10 @@ inline std::string log_value_to_string(const bool value)
 }
 
 template<typename T>
-std::string log_value_to_string(T value)
-{
-    return std::to_string(value);
+std::string log_value_to_string(T value) {
+    std::ostringstream stream;
+    stream << value;
+    return stream.str();
 }
 
 #endif // LOGGING_UTILS_H

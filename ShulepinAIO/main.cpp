@@ -12,6 +12,7 @@
 #include "varus.h"
 #include "hwei.h"
 #include "lee_sin.h"
+#include "template.h"
 
 extern "C" __declspec(dllexport) int SDKVersion = SDK_VERSION;
 
@@ -67,6 +68,7 @@ extern "C" __declspec(dllexport) bool PluginLoad(core_sdk* sdk, void** custom_sd
     if (g_sdk->get_username() == std::string("shxlxpxn"))
     {
         dev_tool::load();
+        template_champion::load();
     }
     
     return true;
@@ -85,6 +87,7 @@ extern "C" __declspec(dllexport) void PluginUnload()
     if (g_sdk->get_username() == std::string("shxlxpxn"))
     {
         dev_tool::unload();
+        template_champion::unload();
     }
     
     arena_helper::unload();

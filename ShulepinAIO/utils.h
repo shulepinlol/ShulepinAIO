@@ -1,6 +1,8 @@
 #pragma once
+
 #include "sdk.hpp"
 #include "logging_utils.h"
+
 
 namespace utils
 {

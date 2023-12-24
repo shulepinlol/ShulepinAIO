@@ -149,16 +149,20 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="arena_helper.cpp" />
+    <ClCompile Include="clipper.cpp" />
     <ClCompile Include="dev_tool.cpp" />
     <ClCompile Include="issue_order_manager.cpp" />
     <ClCompile Include="lucian.cpp" />
@@ -170,17 +174,20 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arena_helper.h" />
+    <ClInclude Include="clipper.hpp" />
     <ClInclude Include="dev_tool.h" />
     <ClInclude Include="hashes.h" />
     <ClInclude Include="issue_order_manager.h" />
     <ClInclude Include="logging_utils.h" />
     <ClInclude Include="lucian.h" />
+    <ClInclude Include="math_extensions.h" />
+    <ClInclude Include="polygon.h" />
+    <ClInclude Include="renderer_extensions.h" />
     <ClInclude Include="spell.h" />
     <ClInclude Include="template.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="varus.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
